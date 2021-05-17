@@ -206,6 +206,57 @@ int main()
 	// Direct connection
 	imshow("Direct connection", real);
 
+
+	// Reconstructing image from Laplace - first image
+	std::vector<Mat_<Vec3b>> LS_A;
+
+	for (int i = 0; i < n; i++)
+	{
+		Mat_<Vec3b> ls_a(lpA[i].rows, lpA[i].cols);
+		for (int j = 0; j < lpA[i].rows; j++)
+		{
+			for (int k = 0; k < lpA[i].cols; k++)
+			{
+				ls_a(j, k) = lpA[i](j, k);
+			}
+		}
+		LS_A.push_back(ls_a);
+	}
+
+	Mat_<Vec3b> reconstructed_first_image = LS_A[0];
+	for (int i = 1; i < n; i++)
+	{
+		Size size = Size(LS_A[i].cols, LS_A[i].rows);
+		pyrUp(reconstructed_first_image, reconstructed_first_image, size);
+		add(reconstructed_first_image, LS_A[i], reconstructed_first_image);
+	}
+
+	// reconstructed image
+	imshow("Reconstructed first image", reconstructed_first_image);
+	
+	float mae_red = 0.0f, mae_green = 0.0f, mae_blue = 0.0f;
+	
+	for (int i = 0; i < src1.rows; i++)
+	{
+		for (int j = 0; j < src1.cols; j++)
+		{
+			mae_blue += abs(src1(i, j)[0] - reconstructed_first_image(i, j)[0]);
+			mae_green += abs(src1(i, j)[1] - reconstructed_first_image(i, j)[1]);
+			mae_red += abs(src1(i, j)[2] - reconstructed_first_image(i, j)[2]);
+		}
+	}
+
+	mae_blue /= (src1.rows * src1.cols);
+	mae_green /= (src1.rows * src1.cols);
+	mae_red /= (src1.rows * src1.cols);
+
+	std::cout << "Red MAE: " << mae_red << '\n';
+	std::cout << "Green MAE: " << mae_green << '\n';
+	std::cout << "Blue MAE: " << mae_blue << '\n';
+
+	// Added 128 for contrast
+	imshow("Difference", (src1 - reconstructed_first_image) + 128);
+
 	waitKey();
 	return 0;
 }
